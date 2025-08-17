@@ -1,0 +1,35 @@
+openapi: 3.0.1
+info:
+  title: Quivr Chat API
+  version: "1.0"
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/brains/{id}/chat:
+    post:
+      summary: Chat with a brain
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                question:
+                  type: string
+                filters:
+                  type: object
+                  properties:
+                    area_index:
+                      type: array
+                      items:
+                        type: string
+      responses:
+        '200':
+          description: OK

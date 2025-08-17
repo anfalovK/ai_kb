@@ -8,23 +8,24 @@ CREATE TABLE ops.users (
 
 CREATE TABLE ops.projects (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES ops.users(id) ON DELETE CASCADE,
+  owner_id uuid REFERENCES ops.users(id) ON DELETE CASCADE,
   name text NOT NULL,
   created_at timestamptz DEFAULT now()
 );
 
 CREATE TABLE ops.tasks (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  owner_id uuid REFERENCES ops.users(id) ON DELETE CASCADE,
   project_id uuid REFERENCES ops.projects(id) ON DELETE CASCADE,
   title text NOT NULL,
-  due_date date,
-  done boolean DEFAULT false,
+  status text NOT NULL DEFAULT 'pending',
+  due timestamptz,
   created_at timestamptz DEFAULT now()
 );
 
 CREATE TABLE ops.events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id uuid REFERENCES ops.projects(id) ON DELETE CASCADE,
+  owner_id uuid REFERENCES ops.users(id) ON DELETE CASCADE,
   title text NOT NULL,
   starts_at timestamptz,
   ends_at timestamptz,
@@ -57,27 +58,26 @@ ALTER TABLE ops.reminders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY select_own_users ON ops.users
   FOR SELECT USING (id = ops.current_user_id());
 
-CREATE POLICY select_own_projects ON ops.projects
-  FOR ALL USING (user_id = ops.current_user_id())
-  WITH CHECK (user_id = ops.current_user_id());
+CREATE POLICY project_owner_policy ON ops.projects
+  FOR ALL USING (owner_id = ops.current_user_id())
+  WITH CHECK (owner_id = ops.current_user_id());
 
-CREATE POLICY select_own_tasks ON ops.tasks
-  FOR ALL USING (project_id IN (SELECT id FROM ops.projects WHERE user_id = ops.current_user_id()))
-  WITH CHECK (project_id IN (SELECT id FROM ops.projects WHERE user_id = ops.current_user_id()));
+CREATE POLICY task_owner_policy ON ops.tasks
+  FOR ALL USING (owner_id = ops.current_user_id())
+  WITH CHECK (owner_id = ops.current_user_id());
 
-CREATE POLICY select_own_events ON ops.events
-  FOR ALL USING (project_id IN (SELECT id FROM ops.projects WHERE user_id = ops.current_user_id()))
-  WITH CHECK (project_id IN (SELECT id FROM ops.projects WHERE user_id = ops.current_user_id()));
+CREATE POLICY event_owner_policy ON ops.events
+  FOR ALL USING (owner_id = ops.current_user_id())
+  WITH CHECK (owner_id = ops.current_user_id());
 
-CREATE POLICY select_own_reminders ON ops.reminders
+CREATE POLICY reminder_task_owner_policy ON ops.reminders
   FOR ALL USING (task_id IN (
-    SELECT id FROM ops.tasks WHERE project_id IN (SELECT id FROM ops.projects WHERE user_id = ops.current_user_id())
+    SELECT id FROM ops.tasks WHERE owner_id = ops.current_user_id()
   ))
   WITH CHECK (task_id IN (
-    SELECT id FROM ops.tasks WHERE project_id IN (SELECT id FROM ops.projects WHERE user_id = ops.current_user_id())
+    SELECT id FROM ops.tasks WHERE owner_id = ops.current_user_id()
   ));
 
-CREATE INDEX ON ops.projects(user_id);
-CREATE INDEX ON ops.tasks(project_id);
-CREATE INDEX ON ops.events(project_id);
-CREATE INDEX ON ops.reminders(task_id);
+CREATE INDEX idx_tasks_owner_status ON ops.tasks(owner_id, status);
+CREATE INDEX idx_tasks_due ON ops.tasks(due);
+CREATE INDEX idx_events_owner_start ON ops.events(owner_id, starts_at);

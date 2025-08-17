@@ -3,6 +3,8 @@ set -euo pipefail
 
 source .env
 
+SKIP_QUIVR=${1:-}
+
 wait_for_http() {
   local url=$1
   until curl -sf "$url" >/dev/null 2>&1; do
@@ -19,6 +21,9 @@ done
 wait_for_http "http://localhost:${POSTGREST_PORT}/"
 wait_for_http "http://localhost:${N8N_PORT}/"
 wait_for_http "http://localhost:${PLANTUML_PORT}/"
-wait_for_http "http://localhost:${OLLAMA_PORT}/"
-wait_for_http "http://localhost:${QUIVR_BACKEND_PORT}/"
-wait_for_http "http://localhost:${QUIVR_FRONTEND_PORT}/"
+wait_for_http "http://localhost:${OLLAMA_PORT}/api/tags"
+
+if [ "$SKIP_QUIVR" != "--skip-quivr" ]; then
+  wait_for_http "http://localhost:4000/"
+  wait_for_http "http://localhost:4002/api/health"
+fi

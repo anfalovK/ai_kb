@@ -3,7 +3,7 @@ info:
   title: Ops API
   version: "1.0"
 servers:
-  - url: http://localhost:3001
+  - url: http://localhost:4001
 paths:
   /projects:
     get:

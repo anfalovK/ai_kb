@@ -1,0 +1,31 @@
+openapi: 3.0.3
+info: { title: Ops API, version: "1.0" }
+servers: [{ url: http://localhost:3001 }]
+paths:
+  /tasks:
+    get:
+      operationId: listTasks
+      parameters:
+        - in: query; name: status; schema: { type: string }
+        - in: query; name: due_at; schema: { type: string }
+        - in: query; name: order; schema: { type: string }
+        - in: query; name: area; schema: { type: integer }
+      responses: { "200": { description: OK } }
+    post:
+      operationId: createTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                project_id: { type: string, format: uuid }
+                title: { type: string }
+                details: { type: string }
+                priority: { type: integer }
+                status: { type: string }
+                due_at: { type: string, format: date-time }
+                area_index: { type: array, items: { type: integer } }
+      responses: { "200": { description: OK } }

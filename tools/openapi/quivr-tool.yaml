@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info: { title: Quivr Chat, version: "1.0" }
+servers: [{ url: http://localhost:8000 }]
+paths:
+  /api/brains/{brain_id}/chat:
+    post:
+      operationId: quivrChat
+      parameters:
+        - in: path
+          name: brain_id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string }
+                filters:
+                  type: object
+                  properties:
+                    area_index:
+                      type: array
+                      items: { type: integer }
+      responses: { "200": { description: OK } }

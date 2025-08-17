@@ -1,0 +1,61 @@
+version: "3.9"
+
+networks:
+  mvp_net:
+    driver: bridge
+
+volumes:
+  ops_pg_data: {}
+  n8n_data: {}
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${OPS_DB_NAME}
+      POSTGRES_USER: ${OPS_DB_USER}
+      POSTGRES_PASSWORD: ${OPS_DB_PASSWORD}
+    ports:
+      - "${OPS_DB_APP_PORT}:5432"
+    networks: [mvp_net]
+    volumes:
+      - ops_pg_data:/var/lib/postgresql/data
+      - ./services/postgres/init:/docker-entrypoint-initdb.d:ro
+
+  postgrest:
+    image: postgrest/postgrest:latest
+    restart: unless-stopped
+    depends_on: [postgres]
+    ports:
+      - "${POSTGREST_PORT}:3000"
+    networks: [mvp_net]
+    environment:
+      PGRST_DB_URI: ${POSTGREST_DB_URI}
+      PGRST_DB_SCHEMAS: ${POSTGREST_DB_SCHEMAS}
+      PGRST_DB_ANON_ROLE: ${POSTGREST_DB_ANON_ROLE}
+      PGRST_JWT_SECRET: ${POSTGREST_JWT_SECRET}
+      PGRST_JWT_AUD: ${POSTGREST_JWT_AUD}
+      PGRST_SERVER_HOST: "!4"
+      PGRST_SERVER_PORT: "3000"
+    command: ["/bin/postgrest", "/etc/postgrest.conf"]
+    volumes:
+      - ./services/postgrest/postgrest.conf:/etc/postgrest.conf:ro
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    depends_on: [postgres]
+    ports:
+      - "${N8N_PORT}:5678"
+    networks: [mvp_net]
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=${N8N_BASIC_AUTH_ACTIVE}
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - GENERIC_TIMEZONE=Europe/Moscow
+    volumes:
+      - n8n_data:/home/node/.n8n

@@ -1,0 +1,113 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${OPS_DB_NAME}
+      POSTGRES_USER: ${OPS_DB_USER}
+      POSTGRES_PASSWORD: ${OPS_DB_PASSWORD}
+    ports:
+      - "${OPS_DB_APP_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - mvp_net
+
+  postgrest:
+    image: postgrest/postgrest:latest
+    depends_on:
+      - postgres
+    environment:
+      POSTGREST_DB_URI: ${POSTGREST_DB_URI}
+      POSTGREST_DB_SCHEMAS: ${POSTGREST_DB_SCHEMAS}
+      POSTGREST_DB_ANON_ROLE: ${POSTGREST_DB_ANON_ROLE}
+      POSTGREST_JWT_SECRET: ${POSTGREST_JWT_SECRET}
+      POSTGREST_JWT_AUD: ${POSTGREST_JWT_AUD}
+      POSTGREST_PORT: ${POSTGREST_PORT}
+    command: ["postgrest", "/etc/postgrest/postgrest.conf"]
+    volumes:
+      - ./services/postgrest/postgrest.conf:/etc/postgrest/postgrest.conf:ro
+    ports:
+      - "${POSTGREST_PORT}:${POSTGREST_PORT}"
+    networks:
+      - mvp_net
+
+  n8n:
+    image: n8nio/n8n:latest
+    depends_on:
+      - postgres
+    ports:
+      - "${N8N_PORT}:${N8N_PORT}"
+    environment:
+      N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE}
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
+      N8N_PORT: ${N8N_PORT}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - mvp_net
+
+  plantuml:
+    image: plantuml/plantuml-server:jetty
+    ports:
+      - "${PLANTUML_PORT}:8080"
+    volumes:
+      - plantuml_data:/var/lib/plantuml
+    networks:
+      - mvp_net
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT}:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - mvp_net
+
+  quivr-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: quivr
+      POSTGRES_USER: quivr
+      POSTGRES_PASSWORD: quivr
+    volumes:
+      - quivr_db_data:/var/lib/postgresql/data
+    networks:
+      - mvp_net
+
+  quivr-backend:
+    image: ghcr.io/quivr/quivr-backend:latest
+    env_file:
+      - services/quivr/quivr.env
+    depends_on:
+      - quivr-db
+      - ollama
+    ports:
+      - "${QUIVR_BACKEND_PORT}:8000"
+    networks:
+      - mvp_net
+
+  quivr-frontend:
+    image: ghcr.io/quivr/quivr-frontend:latest
+    depends_on:
+      - quivr-backend
+    environment:
+      QUIVR_API_URL: http://quivr-backend:8000
+    ports:
+      - "${QUIVR_FRONTEND_PORT}:3000"
+    networks:
+      - mvp_net
+
+networks:
+  mvp_net:
+
+volumes:
+  postgres_data:
+  n8n_data:
+  plantuml_data:
+  ollama_data:
+  quivr_db_data:

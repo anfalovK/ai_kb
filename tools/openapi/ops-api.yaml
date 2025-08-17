@@ -1,0 +1,105 @@
+openapi: 3.0.1
+info:
+  title: Ops API
+  version: "1.0"
+servers:
+  - url: http://localhost:3001
+paths:
+  /projects:
+    get:
+      summary: List projects
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                user_id:
+                  type: string
+      responses:
+        '201':
+          description: Created
+  /tasks:
+    get:
+      summary: List tasks
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                title:
+                  type: string
+                due_date:
+                  type: string
+                  format: date
+      responses:
+        '201':
+          description: Created
+  /events:
+    get:
+      summary: List events
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create event
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                project_id:
+                  type: string
+                title:
+                  type: string
+                starts_at:
+                  type: string
+                  format: date-time
+                ends_at:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Created
+  /reminders:
+    get:
+      summary: List reminders
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create reminder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                task_id:
+                  type: string
+                remind_at:
+                  type: string
+                  format: date-time
+      responses:
+        '201':
+          description: Created

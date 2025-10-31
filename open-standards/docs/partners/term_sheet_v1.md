@@ -1,3 +1,5 @@
+<!-- TODO: Insert the approved full Term Sheet template content here without modifications once provided. -->
+=======
 # 📄 Axelper Term Sheet v1 — Founder ↔ CTO
 
 > Полный шаблон соглашения о партнёрстве на этапе MVP. Заполните данные сторон и используйте как основу для юридического договора.
